@@ -3,7 +3,7 @@ import { ssz } from '@lodestar/types';
 import { concatGindices, createProof, ProofType, toGindex } from '@chainsafe/persistent-merkle-tree';
 
 import { createClient } from './client.js';
-import { toHex, concatProof, verifyProof } from './utils.js';
+import { toHex, concatProof } from './utils.js';
 
 const BeaconState = ssz.electra.BeaconState;
 const BeaconBlock = ssz.electra.BeaconBlock;

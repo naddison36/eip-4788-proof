@@ -1,9 +1,9 @@
 import fs from 'fs';
 import { ssz } from '@lodestar/types';
-import { concatGindices, createProof, ProofType } from '@chainsafe/persistent-merkle-tree';
+import { concatGindices, createProof, ProofType, toGindex } from '@chainsafe/persistent-merkle-tree';
 
 import { createClient } from './client.js';
-import { toHex } from './utils.js';
+import { toHex, concatProof } from './utils.js';
 
 const BeaconState = ssz.electra.BeaconState;
 const BeaconBlock = ssz.electra.BeaconBlock;
@@ -142,11 +142,30 @@ async function main(slot = 'finalized', validatorIndex) {
         console.log(`Validator balance: ${stateView.balances.get(validatorIndex)}`);
     }
 
-    // /** @type {import('@chainsafe/persistent-merkle-tree').Tree} */
-    // const tree = blockView.tree.clone();
-    // const stateRootGIndex = blockView.type.getPropertyGindex('stateRoot');
-    // // Patching the tree by attaching the state in the `stateRoot` field of the block.
-    // tree.setNode(stateRootGIndex, stateView.node);
+    /** @type {import('@chainsafe/persistent-merkle-tree').Tree} */
+    const beaconBlockTree = blockView.tree.clone();
+    const stateRootGIndex = blockView.type.getPropertyGindex('stateRoot');
+    // Patching the tree by attaching the state in the `stateRoot` field of the block.
+    beaconBlockTree.setNode(stateRootGIndex, stateView.node);
+
+    // BeaconBlock.state.PendingDeposits[0].slot
+    console.log(`\nGenerating proof for the slot of the first pending deposit`);
+    const genIndex = concatGindices([
+        blockView.type.getPathInfo(['stateRoot']).gindex,
+        stateView.type.getPathInfo(['pendingDeposits', 0]).gindex,
+        toGindex(3, 4n), // depth 3, index 4 for slot = 11
+    ]);
+    console.log(`gen index for the slot in the first pending deposit in the beacon block: ${genIndex}`);
+    const firstDepositSlotProof = createProof(beaconBlockTree.rootNode, {
+        type: ProofType.single,
+        gindex: genIndex,
+    });
+    console.log(`Slot of the first pending deposit : ${nextDeposit.slot}`);
+    console.log(`Leaf for the slot of the first pending deposit: ${toHex(firstDepositSlotProof.leaf)}`);
+    console.log(
+        `Proof for the slot of the first pending deposit ${firstDepositSlotProof.witnesses.length}: ${firstDepositSlotProof.witnesses.map(toHex)}`
+    );
+    console.log(`Proof in bytes for the slot of the first pending deposit:\n${toHex(concatProof(firstDepositSlotProof))}`);
 }
 
 // Slot
