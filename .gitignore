@@ -24,3 +24,5 @@ tags
 .vscode
 
 **/*.ssz
+
+logs

@@ -42,3 +42,19 @@ export function toHex(t) {
 export function log2(n) {
     return Math.ceil(Math.log2(Number(n))) || 1;
 }
+
+// this is toGindex in Lodestar
+// https://github.com/ChainSafe/ssz/blob/1a34fe845165b125007958f75f159872b561b7dd/packages/persistent-merkle-tree/src/gindex.ts#L8
+export function genIndex(height, index) {
+    // 2 ^ tree height + node index
+    return (1 << height) | index;
+}
+
+export function concatProof(proof) {
+    const witnessLength = proof.witnesses.length;
+    const witnessBytes = new Uint8Array(witnessLength * 32);
+    for (let i = 0; i < witnessLength; i++) {
+        witnessBytes.set(proof.witnesses[i], i * 32);
+    }
+    return witnessBytes;
+}
