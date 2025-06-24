@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { ssz } from '@lodestar/types';
-import { concatGindices, createProof, ProofType } from '@chainsafe/persistent-merkle-tree';
+import { concatGindices, createProof, ProofType, toGindex } from '@chainsafe/persistent-merkle-tree';
 
 import { createClient } from './client.js';
 import { toHex, concatProof, verifyProof } from './utils.js';
@@ -60,42 +60,13 @@ async function main(slot = 'finalized', validatorIndex = 0) {
 
     console.log(`State root gen index in block view: ${stateRootGIndex}`);
 
-    // Create a proof of a validators container against the block.
+    // BeaconBlock.state.validators
+    console.log(`\nGenerating validator container proof`);
     const genIndexValidatorsContainer = concatGindices([
         blockView.type.getPathInfo(['stateRoot']).gindex,
         stateView.type.getPathInfo(['validators']).gindex,
     ]);
-    console.log(
-        `gen index for validators container in state view  : ${stateView.type.getPathInfo(['validators']).gindex}`
-    );
-    console.log(`gen index for validators container in combined tree: ${genIndexValidatorsContainer}`);
-
-    // Create a proof of a validator's details against the block.
-    const genIndexValidatorContainer = concatGindices([
-        blockView.type.getPathInfo(['stateRoot']).gindex,
-        stateView.type.getPathInfo(['validators', validatorIndex]).gindex,
-    ]);
-    console.log(
-        `gen index for validator ${validatorIndex} in state view  : ${
-            stateView.type.getPathInfo(['validators', validatorIndex]).gindex
-        }`
-    );
-    console.log(`gen index for validator ${validatorIndex} in combined tree: ${genIndexValidatorContainer}`);
-
-    const genIndexValidatorPubkey = concatGindices([
-        blockView.type.getPathInfo(['stateRoot']).gindex,
-        // stateView.type.getPathInfo(['validators', validatorIndex, 'pubkey']).gindex,
-        stateView.type.getPathInfo(['validators', validatorIndex]).gindex * 2n + 3n,
-    ]);
-    console.log(
-        `gen index of pubkey for validator ${validatorIndex} in state view  : ${
-            stateView.type.getPathInfo(['validators', validatorIndex, 'pubkey']).gindex
-        }`
-    );
-    console.log(`gen index for pubkey of validator ${validatorIndex} in combined tree: ${genIndexValidatorPubkey}`);
-
-    // Create a proof of validators container against the block.
-    console.log(`Generating validator container proof`);
+    console.log(`gen index for validators container in beacon block: ${genIndexValidatorsContainer}`);
     const validatorsContainerProof = createProof(beaconBlockTree.rootNode, {
         type: ProofType.single,
         gindex: genIndexValidatorsContainer,
@@ -107,25 +78,48 @@ async function main(slot = 'finalized', validatorIndex = 0) {
     );
 
     // Create a proof for the state of the validator against the block.
-    console.log(`Generating validator container proof`);
+    // BeaconBlock.state.validators[validatorIndex]
+    console.log(`\nGenerating validator container proof`);
+    const genIndexValidatorContainer = concatGindices([
+        blockView.type.getPathInfo(['stateRoot']).gindex,
+        stateView.type.getPathInfo(['validators', validatorIndex]).gindex,
+    ]);
+    console.log(`gen index for validator ${validatorIndex} in combined tree: ${genIndexValidatorContainer}`);
     const validatorContainerProof = createProof(beaconBlockTree.rootNode, {
         type: ProofType.single,
         gindex: genIndexValidatorContainer,
     });
+    console.log(`Validator container leaf: ${toHex(validatorContainerProof.leaf)}`);
     console.log(
         `Proof for validator container at index ${validatorIndex} to block root ${
             validatorContainerProof.witnesses.length
         }: ${validatorContainerProof.witnesses.map(toHex)}`
     );
-    console.log(`Generating validator pubkey proof`);
+
+    console.log(`\nGenerating validator pubkey proof`);
+    const genIndexValidatorPubkey = concatGindices([
+        blockView.type.getPathInfo(['stateRoot']).gindex,
+        // stateView.type.getPathInfo(['validators', validatorIndex, 'pubkey']).gindex,
+        stateView.type.getPathInfo(['validators', validatorIndex]).gindex,
+        toGindex(3, 0n), // depth 3, index 0 for pubkey = 8
+    ]);
+    console.log(`gen index for pubkey of validator ${validatorIndex} in beacon block: ${genIndexValidatorPubkey}`);
     const validatorPubkeyProof = createProof(beaconBlockTree.rootNode, {
         type: ProofType.single,
         gindex: genIndexValidatorPubkey,
     });
+    const validatorDetails = stateView.validators.get(validatorIndex);
+    console.log(`Validator public key: ${toHex(validatorDetails.pubkey)}`);
+    console.log(`Validator public key leaf: ${toHex(validatorPubkeyProof.leaf)}`);
     console.log(
         `Proof for pubkey of validator ${validatorIndex} to block root ${
             validatorPubkeyProof.witnesses.length
         }: ${validatorPubkeyProof.witnesses.map(toHex)}`
+    );
+    console.log(
+        `Public key proof for validator ${validatorIndex} to beacon block root:\n${toHex(
+            concatProof(validatorPubkeyProof)
+        )}`
     );
 
     // Get the balance container root from the state view.
@@ -133,18 +127,15 @@ async function main(slot = 'finalized', validatorIndex = 0) {
     console.log(`Balance container root: ${toHex(balanceContainerRoot)}`);
 
     console.log(`gen index for state root: ${blockView.type.getPathInfo(['stateRoot']).gindex}`);
-    console.log(`gen index for balances container in state: ${stateView.type.getPathInfo(['balances']).gindex}`);
+
+    // BeaconBlock.state.balances
     const genIndexBalancesContainer = concatGindices([
         blockView.type.getPathInfo(['stateRoot']).gindex,
         stateView.type.getPathInfo(['balances']).gindex,
     ]);
     console.log(`gen index for balances container in block: ${genIndexBalancesContainer}`);
 
-    console.log(
-        `gen index for validator ${validatorIndex} balance in state: ${
-            stateView.type.getPathInfo(['balances', validatorIndex]).gindex
-        }`
-    );
+    // BeaconBlock.state.balances[validatorIndex]
     const genIndexBalanceInBlock = concatGindices([
         blockView.type.getPathInfo(['stateRoot']).gindex,
         stateView.type.getPathInfo(['balances', validatorIndex]).gindex,
@@ -170,12 +161,14 @@ async function main(slot = 'finalized', validatorIndex = 0) {
     console.log(`Proof of balances container to block root in bytes :\n${toHex(concatProof(balancesContainerProof))}`);
     console.log(`Balances container leaf: ${toHex(balancesContainerProof.leaf)}`);
 
-    console.log(`Generating balance proof for validator ${validatorIndex} to beacon block root`);
+    console.log(`\nGenerating balance proof for validator ${validatorIndex} to beacon block root`);
     const balanceProof = createProof(beaconBlockTree.rootNode, {
         type: ProofType.single,
         gindex: genIndexBalanceInBlock,
     });
     console.log(`Balance leaf: ${toHex(balanceProof.leaf)}`);
+    const balance = stateView.balances.get(validatorIndex);
+    console.log(`Balance for validator ${validatorIndex}: ${balance} Gwei`);
     console.log(
         `Proof of validator balance to block root ${balanceProof.witnesses.length}: ${balanceProof.witnesses.map(
             toHex
@@ -184,14 +177,6 @@ async function main(slot = 'finalized', validatorIndex = 0) {
     console.log(
         `Balance proof for validator ${validatorIndex} to beacon block root:\n${toHex(concatProof(balanceProof))}`
     );
-
-    const slotProof = createProof(beaconBlockTree.rootNode, {
-        type: ProofType.single,
-        gindex: 8,
-    });
-    console.log(`Slot leaf: ${toHex(slotProof.leaf)}`);
-    console.log(`Proof of slot to block root ${slotProof.witnesses.length}: ${slotProof.witnesses.map(toHex)}`);
-    console.log(`Slot proof in bytes:\n${toHex(concatProof(slotProof))}`);
 
     // Clone the proof
     const balanceToContainerRootProof = { ...balanceProof };
@@ -206,6 +191,34 @@ async function main(slot = 'finalized', validatorIndex = 0) {
             concatProof(balanceToContainerRootProof)
         )}`
     );
+
+    // BeaconBlock.slot
+    console.log(`\nGenerating slot proof to beacon block root`);
+    const slotGenIndex = blockView.type.getPathInfo(['slot']).gindex;
+    const slotProof = createProof(beaconBlockTree.rootNode, {
+        type: ProofType.single,
+        gindex: slotGenIndex,
+    });
+    console.log(`Slot leaf: ${toHex(slotProof.leaf)}`);
+    console.log(`Proof of slot to block root ${slotProof.witnesses.length}: ${slotProof.witnesses.map(toHex)}`);
+    console.log(`Slot proof in bytes:\n${toHex(concatProof(slotProof))}`);
+
+    // BeaconBlock.body.executionPayload.blockNumber
+    console.log(`\nGenerating block number proof to beacon block root`);
+    const blockNumberGenIndex = blockView.type.getPathInfo(['body', 'executionPayload', 'blockNumber']).gindex;
+    console.log(`gen index for block number: ${blockNumberGenIndex}`);
+    console.log(`Block number: ${blockView.body.executionPayload.blockNumber}`);
+    const blockNumberProof = createProof(beaconBlockTree.rootNode, {
+        type: ProofType.single,
+        gindex: blockNumberGenIndex,
+    });
+    console.log(`Block number leaf: ${toHex(blockNumberProof.leaf)}`);
+    console.log(
+        `Proof of block number to block root ${blockNumberProof.witnesses.length}: ${blockNumberProof.witnesses.map(
+            toHex
+        )}`
+    );
+    console.log(`Block number proof in bytes:\n${toHex(concatProof(blockNumberProof))}`);
 
     // // Sanity check: verify gIndex and proof match.
     // console.log(`Verifying proof`);
@@ -318,9 +331,9 @@ async function main(slot = 'finalized', validatorIndex = 0) {
 // Slot, Validator index
 // main(11861306, 1770189).then(console.log).catch(console.error);
 // main(11861306, 1770193).then(console.log).catch(console.error);
-// main(11861307, 1770193).then(console.log).catch(console.error);
+main(11861307, 1770193).then(console.log).catch(console.error);
 
 // Validator in EigenPod verifyWithdrawalCredentials
 // tx 0xb1b848991c3cba0851b4742cdae067001de91562df8c91b53d26324c987b42e7
 // this has since been withdrawn
-main(11952064, 1770189).then(console.log).catch(console.error);
+// main(11952064, 1770189).then(console.log).catch(console.error);
