@@ -70,31 +70,26 @@ async function main(slot = 'finalized', validatorIndex) {
     console.log(`BeaconBlock.state.pendingConsolidations length: ${stateView.pendingConsolidations.length}`);
     console.log(`BeaconBlock.state.depositBalanceToConsume: ${stateView.depositBalanceToConsume}`);
 
-    const nextDeposit = stateView.pendingDeposits.get(0);
     console.log(`gindex of pending deposit index in state: ${stateView.type.getPathInfo(['pendingDeposits']).gindex}`);
     console.log(
-        `gindex of pending deposit at index 0 in state: ${stateView.type.getPathInfo(['pendingDeposits', 0]).gindex}`
+        `gindex of pending deposit at index 0 in state : ${stateView.type.getPathInfo(['pendingDeposits', 0]).gindex}`
     );
     console.log(
-        `gindex of pending deposit at index 1 in state: ${stateView.type.getPathInfo(['pendingDeposits', 1]).gindex}`
-    );
-    console.log(
-        `gindex of pending deposit at index 2 in state: ${stateView.type.getPathInfo(['pendingDeposits', 2]).gindex}`
-    );
-    console.log(
-        `gindex of pending deposit at last position in state: ${
+        `gindex of pending deposit at last pos in state: ${
             stateView.type.getPathInfo(['pendingDeposits', stateView.pendingDeposits.length - 1]).gindex
         }`
     );
+
     console.log(`\nFirst deposit in the pending deposits queue`);
+    const nextDeposit = stateView.pendingDeposits.get(0);
     console.log(`amount ${nextDeposit.amount}`);
     console.log(`pubkey ${toHex(nextDeposit.pubkey)}`);
     console.log(`slot ${nextDeposit.slot}`);
     console.log(`withdrawalCredentials ${toHex(nextDeposit.withdrawalCredentials)}`);
     // console.log(`signature ${toHex(nextDeposit.signature)}`);
 
-    const lastDeposit = stateView.pendingDeposits.get(stateView.pendingDeposits.length - 1);
     console.log(`\nLast last deposit in the pending deposits queue`);
+    const lastDeposit = stateView.pendingDeposits.get(stateView.pendingDeposits.length - 1);
     console.log(`amount ${lastDeposit.amount}`);
     console.log(`pubkey ${toHex(lastDeposit.pubkey)}`);
     console.log(`slot ${lastDeposit.slot}`);
@@ -163,9 +158,13 @@ async function main(slot = 'finalized', validatorIndex) {
     console.log(`Slot of the first pending deposit : ${nextDeposit.slot}`);
     console.log(`Leaf for the slot of the first pending deposit: ${toHex(firstDepositSlotProof.leaf)}`);
     console.log(
-        `Proof for the slot of the first pending deposit ${firstDepositSlotProof.witnesses.length}: ${firstDepositSlotProof.witnesses.map(toHex)}`
+        `Proof for the slot of the first pending deposit ${
+            firstDepositSlotProof.witnesses.length
+        }: ${firstDepositSlotProof.witnesses.map(toHex)}`
     );
-    console.log(`Proof in bytes for the slot of the first pending deposit:\n${toHex(concatProof(firstDepositSlotProof))}`);
+    console.log(
+        `Proof in bytes for the slot of the first pending deposit:\n${toHex(concatProof(firstDepositSlotProof))}`
+    );
 }
 
 // Slot
@@ -200,7 +199,7 @@ async function main(slot = 'finalized', validatorIndex) {
 // The last slot in epoch 373475
 // await main(11951231, 1966988);
 // The first slot in epoch 373476
-await main(11951232, 1966988);
+// await main(11951232, 1966988);
 
 // First slot in epoch 373481 when the validator was activated
 // await main(11951392, 1966988);
@@ -211,3 +210,8 @@ await main(11951232, 1966988);
 // main(11941369);
 // Slot before 30 deposits
 // main(11941368);
+
+// Pectra upgrade slot 11649024
+// main(11649024);
+// Next epoch after the Pectra upgrade
+main(11649060);

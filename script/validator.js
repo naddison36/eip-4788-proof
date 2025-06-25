@@ -71,30 +71,12 @@ async function main(slot = 'finalized', validatorIndex = 0) {
         type: ProofType.single,
         gindex: genIndexValidatorsContainer,
     });
-    console.log(
-        `Proof of validators container to block root ${
-            validatorsContainerProof.witnesses.length
-        }: ${validatorsContainerProof.witnesses.map(toHex)}`
-    );
-
-    // Create a proof for the state of the validator against the block.
-    // BeaconBlock.state.validators[validatorIndex]
-    console.log(`\nGenerating validator container proof`);
-    const genIndexValidatorContainer = concatGindices([
-        blockView.type.getPathInfo(['stateRoot']).gindex,
-        stateView.type.getPathInfo(['validators', validatorIndex]).gindex,
-    ]);
-    console.log(`gen index for validator ${validatorIndex} in combined tree: ${genIndexValidatorContainer}`);
-    const validatorContainerProof = createProof(beaconBlockTree.rootNode, {
-        type: ProofType.single,
-        gindex: genIndexValidatorContainer,
-    });
-    console.log(`Validator container leaf: ${toHex(validatorContainerProof.leaf)}`);
-    console.log(
-        `Proof for validator container at index ${validatorIndex} to block root ${
-            validatorContainerProof.witnesses.length
-        }: ${validatorContainerProof.witnesses.map(toHex)}`
-    );
+    // console.log(
+    //     `Proof of validators container to block root ${
+    //         validatorsContainerProof.witnesses.length
+    //     }: ${validatorsContainerProof.witnesses.map(toHex)}`
+    // );
+    console.log(`Proof of validators container to block root:\n${toHex(concatProof(validatorsContainerProof))}`);
 
     console.log(`\nGenerating validator pubkey proof`);
     const genIndexValidatorPubkey = concatGindices([
@@ -111,11 +93,11 @@ async function main(slot = 'finalized', validatorIndex = 0) {
     const validatorDetails = stateView.validators.get(validatorIndex);
     console.log(`Validator public key: ${toHex(validatorDetails.pubkey)}`);
     console.log(`Validator public key leaf: ${toHex(validatorPubkeyProof.leaf)}`);
-    console.log(
-        `Proof for pubkey of validator ${validatorIndex} to block root ${
-            validatorPubkeyProof.witnesses.length
-        }: ${validatorPubkeyProof.witnesses.map(toHex)}`
-    );
+    // console.log(
+    //     `Proof for pubkey of validator ${validatorIndex} to block root ${
+    //         validatorPubkeyProof.witnesses.length
+    //     }: ${validatorPubkeyProof.witnesses.map(toHex)}`
+    // );
     console.log(
         `Public key proof for validator ${validatorIndex} to beacon block root:\n${toHex(
             concatProof(validatorPubkeyProof)
@@ -125,71 +107,65 @@ async function main(slot = 'finalized', validatorIndex = 0) {
     // Get the balance container root from the state view.
     const balanceContainerRoot = stateView.balances.hashTreeRoot();
     console.log(`Balance container root: ${toHex(balanceContainerRoot)}`);
-
-    console.log(`gen index for state root: ${blockView.type.getPathInfo(['stateRoot']).gindex}`);
+    console.log(`gen index for state in beacon block: ${blockView.type.getPathInfo(['stateRoot']).gindex}`);
+    console.log(`gen index for balances in state: ${stateView.type.getPathInfo(['balances']).gindex}`);
 
     // BeaconBlock.state.balances
     const genIndexBalancesContainer = concatGindices([
         blockView.type.getPathInfo(['stateRoot']).gindex,
         stateView.type.getPathInfo(['balances']).gindex,
     ]);
-    console.log(`gen index for balances container in block: ${genIndexBalancesContainer}`);
+    console.log(`gen index for balances container in beacon block: ${genIndexBalancesContainer}`);
 
     // BeaconBlock.state.balances[validatorIndex]
+    // There are 4 balances per leaf, so we need to divide by 4 which is right shift by 2.
+    const balanceIndex = validatorIndex >> 2;
+    console.log(`Balance index in the balances container: ${balanceIndex}`);
+    console.log(
+        `gen index for balance container using validatorIndex in state: ${
+            stateView.type.getPathInfo(['balances', validatorIndex]).gindex
+        }`
+    );
+    const genIndexBalanceContainer = toGindex(39, BigInt(balanceIndex));
+    console.log(`index for balance in balances container: ${genIndexBalanceContainer}`);
     const genIndexBalanceInBlock = concatGindices([
         blockView.type.getPathInfo(['stateRoot']).gindex,
         stateView.type.getPathInfo(['balances', validatorIndex]).gindex,
     ]);
-    console.log(`gen index for validator ${validatorIndex} balance in block: ${genIndexBalanceInBlock}`);
+    console.log(`gen index for validator ${validatorIndex} balance in beacon block: ${genIndexBalanceInBlock}`);
+
+    console.log(`\nGenerating balance in balances container proof`);
     const balancesTree = beaconBlockTree.getSubtree(genIndexBalancesContainer);
     console.log(`Balances sub tree root: ${toHex(balancesTree.root)}`);
-
-    // Get balance leaf
     const balanceLeaf = beaconBlockTree.getRoot(genIndexBalanceInBlock);
-    console.log(`Balance leaf: ${toHex(balanceLeaf)}`);
+    console.log(`Balance leaf using validator index: ${toHex(balanceLeaf)}`);
 
-    console.log(`Generating balances container proof`);
+    const balanceInContainerProof = createProof(balancesTree.rootNode, {
+        type: ProofType.single,
+        gindex: genIndexBalanceContainer,
+    });
+    console.log(`Balance  leaf: ${toHex(balanceInContainerProof.leaf)}`);
+    console.log(`Balances root: ${toHex(balancesTree.root)}`);
+    // console.log(
+    //     `Proof of balance in balances container ${
+    //         balanceInContainerProof.witnesses.length
+    //     }: ${balanceInContainerProof.witnesses.map(toHex)}`
+    // );
+    console.log(`Proof of balance in balances container in bytes :\n${toHex(concatProof(balanceInContainerProof))}`);
+
+    console.log(`\nGenerating balances container proof`);
     const balancesContainerProof = createProof(beaconBlockTree.rootNode, {
         type: ProofType.single,
         gindex: genIndexBalancesContainer,
     });
-    console.log(
-        `Proof of balances container to block root ${
-            balancesContainerProof.witnesses.length
-        }: ${balancesContainerProof.witnesses.map(toHex)}`
-    );
-    console.log(`Proof of balances container to block root in bytes :\n${toHex(concatProof(balancesContainerProof))}`);
     console.log(`Balances container leaf: ${toHex(balancesContainerProof.leaf)}`);
-
-    console.log(`\nGenerating balance proof for validator ${validatorIndex} to beacon block root`);
-    const balanceProof = createProof(beaconBlockTree.rootNode, {
-        type: ProofType.single,
-        gindex: genIndexBalanceInBlock,
-    });
-    console.log(`Balance leaf: ${toHex(balanceProof.leaf)}`);
-    const balance = stateView.balances.get(validatorIndex);
-    console.log(`Balance for validator ${validatorIndex}: ${balance} Gwei`);
+    // console.log(
+    //     `Proof of balances container to block root ${
+    //         balancesContainerProof.witnesses.length
+    //     }: ${balancesContainerProof.witnesses.map(toHex)}`
+    // );
     console.log(
-        `Proof of validator balance to block root ${balanceProof.witnesses.length}: ${balanceProof.witnesses.map(
-            toHex
-        )}`
-    );
-    console.log(
-        `Balance proof for validator ${validatorIndex} to beacon block root:\n${toHex(concatProof(balanceProof))}`
-    );
-
-    // Clone the proof
-    const balanceToContainerRootProof = { ...balanceProof };
-    balanceToContainerRootProof.witnesses = balanceToContainerRootProof.witnesses.slice(0, 39);
-    console.log(
-        `Proof of validator balance in balances container ${
-            balanceToContainerRootProof.witnesses.length
-        }: ${balanceToContainerRootProof.witnesses.map(toHex)}`
-    );
-    console.log(
-        `Balance proof for validator ${validatorIndex} in balances container:\n${toHex(
-            concatProof(balanceToContainerRootProof)
-        )}`
+        `Proof of balances container to beacon block root in bytes :\n${toHex(concatProof(balancesContainerProof))}`
     );
 
     // BeaconBlock.slot
@@ -200,7 +176,7 @@ async function main(slot = 'finalized', validatorIndex = 0) {
         gindex: slotGenIndex,
     });
     console.log(`Slot leaf: ${toHex(slotProof.leaf)}`);
-    console.log(`Proof of slot to block root ${slotProof.witnesses.length}: ${slotProof.witnesses.map(toHex)}`);
+    // console.log(`Proof of slot to block root ${slotProof.witnesses.length}: ${slotProof.witnesses.map(toHex)}`);
     console.log(`Slot proof in bytes:\n${toHex(concatProof(slotProof))}`);
 
     // BeaconBlock.body.executionPayload.blockNumber
@@ -213,11 +189,11 @@ async function main(slot = 'finalized', validatorIndex = 0) {
         gindex: blockNumberGenIndex,
     });
     console.log(`Block number leaf: ${toHex(blockNumberProof.leaf)}`);
-    console.log(
-        `Proof of block number to block root ${blockNumberProof.witnesses.length}: ${blockNumberProof.witnesses.map(
-            toHex
-        )}`
-    );
+    // console.log(
+    //     `Proof of block number to block root ${blockNumberProof.witnesses.length}: ${blockNumberProof.witnesses.map(
+    //         toHex
+    //     )}`
+    // );
     console.log(`Block number proof in bytes:\n${toHex(concatProof(blockNumberProof))}`);
 
     // // Sanity check: verify gIndex and proof match.
@@ -253,17 +229,10 @@ async function main(slot = 'finalized', validatorIndex = 0) {
 
     return {
         blockRoot: toHex(blockRoot),
-        // proof: validatorProof.witnesses.map(toHex),
         balanceContainerRoot: toHex(balanceContainerRoot),
-        // balancesContainerProof: balancesContainerProof.witnesses.map(toHex),
-        // balanceProof: balanceProof.witnesses.map(toHex),
         validatorIndex,
         validatorBalance: validatorBalance,
         validator: stateView.validators.type.elementType.toJson(validator),
-        // timestamp: client.slotToTS(nextBlockHeader.message.slot),
-        // genIndexValidatorInfo,
-        genIndexBalancesContainer,
-        genIndexBalanceInBlock,
     };
 }
 
@@ -331,7 +300,9 @@ async function main(slot = 'finalized', validatorIndex = 0) {
 // Slot, Validator index
 // main(11861306, 1770189).then(console.log).catch(console.error);
 // main(11861306, 1770193).then(console.log).catch(console.error);
-main(11861307, 1770193).then(console.log).catch(console.error);
+// Validator 1770193 deposited in slot 10961946 exited in slot 11921028
+// main(11861307, 1770193).then(console.log).catch(console.error);
+main(11999549, 1770193).then(console.log).catch(console.error);
 
 // Validator in EigenPod verifyWithdrawalCredentials
 // tx 0xb1b848991c3cba0851b4742cdae067001de91562df8c91b53d26324c987b42e7
