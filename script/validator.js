@@ -302,9 +302,18 @@ async function main(slot = 'finalized', validatorIndex = 0) {
 // main(11861306, 1770193).then(console.log).catch(console.error);
 // Validator 1770193 deposited in slot 10961946 exited in slot 11921028
 // main(11861307, 1770193).then(console.log).catch(console.error);
-main(11999549, 1770193).then(console.log).catch(console.error);
+// main(11999549, 1770193).then(console.log).catch(console.error);
 
 // Validator in EigenPod verifyWithdrawalCredentials
 // tx 0xb1b848991c3cba0851b4742cdae067001de91562df8c91b53d26324c987b42e7
 // this has since been withdrawn
 // main(11952064, 1770189).then(console.log).catch(console.error);
+
+// Validator 4473 was converted to a compounding validator 
+// main(11999071, 4473 ).then(console.log).catch(console.error);
+
+// Validator 1018237 has fully exited after exit request in slot 12171672 sent 10 days ago 
+// main(12171672, 1018237 ).then(console.log).catch(console.error);
+// After validator has exited and been swept
+main(12243576, 1018237 ).then(console.log).catch(console.error);
+

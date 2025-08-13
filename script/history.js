@@ -13,9 +13,10 @@ async function main(blockId = 'head', oldSlot) {
     const currentBlockView = await getBeaconBlock(blockId);
     logBeaconBlock(currentBlockView);
 
-    const { historicalSummariesIndex, blockRootsIndex, historicalSummaryFirstSlot } = calcIndexes(oldSlot);
-
     const currentStateView = await getBeaconState(currentBlockView.slot);
+    console.log(`Genesis time      : ${currentStateView.genesisTime}`);
+
+    const { historicalSummariesIndex, blockRootsIndex, historicalSummaryFirstSlot } = calcIndexes(oldSlot);
 
     console.log(
         `There are ${currentStateView.historicalSummaries.length} historical summaries in slot ${currentBlockView.slot}`
@@ -107,10 +108,10 @@ const logBeaconBlock = (blockView) => {
 // Slot
 // await main('head');
 // First historical summary
-// await main(12279967, firstSummarySlot);
+await main(12279967, firstSummarySlot);
 // await main(12279967, firstSummarySlot + slotsPerHistoricalRoot);
 // First slot from the electra fork
-await main(12279967, 11649024);
+// await main(12279967, 11649024);
 // await main(12279967, 12200000);
 // await main(12279967, 12200000);
 
@@ -191,3 +192,4 @@ await main(12279967, 11649024);
 // 12268565 - 5140 = 12263425 updated 0 index 0xb41d013b75c95252179ce539e23757db8dc0d6d0698fa3180e97b0a2488f28fa
 // await main(12263425, 12200000);
 // await main(12268565, 12200000); // Updated beacon root 5140
+

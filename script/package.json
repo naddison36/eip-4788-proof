@@ -13,6 +13,7 @@
     "@lodestar/api": "^1.31.0",
     "@lodestar/config": "^1.31.1",
     "@lodestar/params": "^1.31.1",
-    "@lodestar/types": "^1.31.1"
+    "@lodestar/types": "^1.31.1",
+    "ethers": "^6.15.0"
   }
 }

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { ssz } from '@lodestar/types';
+import { formatUnits } from 'ethers';
 import { concatGindices, createProof, ProofType, toGindex } from '@chainsafe/persistent-merkle-tree';
 
 import { createClient } from './client.js';
@@ -12,7 +13,7 @@ const BeaconBlock = ssz.electra.BeaconBlock;
  * @param {string|number} slot
  * @param {number} validatorIndex
  */
-async function main(slot = 'finalized', validatorIndex) {
+async function main(slot = 'head', validatorIndex) {
     const client = await createClient();
 
     // Get the beacon block for the slot from the beacon node.
@@ -26,14 +27,15 @@ async function main(slot = 'finalized', validatorIndex) {
     const blockRoot = blockView.hashTreeRoot();
     console.log(`Beacon block root : ${toHex(blockRoot)}`);
     console.log(`Beacon parent root: ${toHex(blockView.parentRoot)}`);
-    console.log(`BeaconBlock.slot: ${blockView.slot}`);
-    console.log(`BeaconBlock.body.executionPayload.blockNumber: ${blockView.body.executionPayload.blockNumber}`);
-    console.log(`BeaconBlock.body.executionPayload.timestamp: ${blockView.body.executionPayload.timestamp}`);
+    console.log(`BeaconBlock.slot  : ${blockView.slot}`);
+    console.log(`Epoch             : ${BigInt(blockView.slot) / 32n}`);
+    console.log(`BeaconBlock.body.executionPayload.blockNumber   : ${blockView.body.executionPayload.blockNumber}`);
+    console.log(`BeaconBlock.body.executionPayload.timestamp     : ${blockView.body.executionPayload.timestamp}`);
     console.log(
-        `BeaconBlock.body.executionRequests.deposits length: ${blockView.body.executionRequests.deposits.length}`
+        `BeaconBlock.body.executionRequests.deposits length      : ${blockView.body.executionRequests.deposits.length}`
     );
     console.log(
-        `BeaconBlock.body.executionRequests.withdrawals length: ${blockView.body.executionRequests.withdrawals.length}`
+        `BeaconBlock.body.executionRequests.withdrawals length   : ${blockView.body.executionRequests.withdrawals.length}`
     );
     console.log(
         `BeaconBlock.body.executionRequests.consolidations length: ${blockView.body.executionRequests.consolidations.length}`
@@ -46,8 +48,8 @@ async function main(slot = 'finalized', validatorIndex) {
         console.log(`Loading state from file ${stateFilename}`);
         stateSsz = fs.readFileSync(stateFilename);
     } else {
-        console.log(`Fetching state for slot ${slot} from the beacon node`);
-        const stateRes = await client.debug.getStateV2({ stateId: slot }, 'ssz');
+        console.log(`Fetching state for slot ${blockView.slot} from the beacon node`);
+        const stateRes = await client.debug.getStateV2({ stateId: blockView.slot }, 'ssz');
         if (!stateRes.ok) {
             throw stateRes.error;
         }
@@ -61,14 +63,14 @@ async function main(slot = 'finalized', validatorIndex) {
     console.log(`State root: ${toHex(stateRoot)}`);
 
     // Read the deposit index from the state view.
-    console.log(`BeaconBlock.state.slot: ${stateView.slot}`);
-    console.log(`BeaconBlock.state.latestBlockHeader.slot: ${stateView.latestBlockHeader.slot}`);
-    console.log(`BeaconBlock.state.eth1DepositIndex: ${stateView.eth1DepositIndex}`);
+    console.log(`BeaconBlock.state.slot                     : ${stateView.slot}`);
+    console.log(`BeaconBlock.state.latestBlockHeader.slot   : ${stateView.latestBlockHeader.slot}`);
+    console.log(`BeaconBlock.state.eth1DepositIndex         : ${stateView.eth1DepositIndex}`);
     console.log(`BeaconBlock.state.depositRequestsStartIndex: ${stateView.depositRequestsStartIndex}`);
-    console.log(`BeaconBlock.state.pendingDeposits length: ${stateView.pendingDeposits.length}`);
+    console.log(`BeaconBlock.state.pendingDeposits length          : ${stateView.pendingDeposits.length}`);
     console.log(`BeaconBlock.state.pendingPartialWithdrawals length: ${stateView.pendingPartialWithdrawals.length}`);
-    console.log(`BeaconBlock.state.pendingConsolidations length: ${stateView.pendingConsolidations.length}`);
-    console.log(`BeaconBlock.state.depositBalanceToConsume: ${stateView.depositBalanceToConsume}`);
+    console.log(`BeaconBlock.state.pendingConsolidations length    : ${stateView.pendingConsolidations.length}`);
+    console.log(`BeaconBlock.state.depositBalanceToConsume  : ${stateView.depositBalanceToConsume}`);
 
     console.log(`gindex of pending deposit index in state: ${stateView.type.getPathInfo(['pendingDeposits']).gindex}`);
     console.log(
@@ -80,45 +82,93 @@ async function main(slot = 'finalized', validatorIndex) {
         }`
     );
 
-    console.log(`\nFirst deposit in the pending deposits queue`);
-    const nextDeposit = stateView.pendingDeposits.get(0);
-    console.log(`amount ${nextDeposit.amount}`);
-    console.log(`pubkey ${toHex(nextDeposit.pubkey)}`);
-    console.log(`slot ${nextDeposit.slot}`);
-    console.log(`withdrawalCredentials ${toHex(nextDeposit.withdrawalCredentials)}`);
-    // console.log(`signature ${toHex(nextDeposit.signature)}`);
-
-    console.log(`\nLast last deposit in the pending deposits queue`);
-    const lastDeposit = stateView.pendingDeposits.get(stateView.pendingDeposits.length - 1);
-    console.log(`amount ${lastDeposit.amount}`);
-    console.log(`pubkey ${toHex(lastDeposit.pubkey)}`);
-    console.log(`slot ${lastDeposit.slot}`);
-    console.log(`withdrawalCredentials ${toHex(lastDeposit.withdrawalCredentials)}`);
-    // console.log(`signature ${toHex(lastDeposit.signature)}`);
-
-    const validatorPubKeyBuffer = Buffer.from(
-        // '960cae33dfddd0c53d47aa43e526a7688fa9437cdb8f08eab765bac15f4afa1f9f14e7ea45eaecd7dbdc91a3f82e237c',
-        '8e49d4be22748a7755cc25926b17e9c4346fe9002a74356da558aba3e70db11a0a5bbd3c15ecfbf86e9f0c85c9e0e962',
-        'hex'
-    );
-    console.log(`\nLooking for deposits to validator with pubkey: ${toHex(validatorPubKeyBuffer)}`);
-    let depositsFound = 0;
+    console.log('Deposits that are out of order by slot:');
+    let lastDeposit;
     for (let i = 0; i < stateView.pendingDeposits.length; i++) {
         const deposit = stateView.pendingDeposits.get(i);
-        if (Buffer.from(deposit.pubkey).equals(validatorPubKeyBuffer)) {
-            console.log(`Found deposit at index ${i}`);
-            console.log(`amount ${deposit.amount}`);
-            console.log(`pubkey ${toHex(deposit.pubkey)}`);
-            console.log(`slot ${deposit.slot}`);
-            console.log(`withdrawalCredentials ${toHex(deposit.withdrawalCredentials)}`);
-            // console.log(`signature ${toHex(deposit.signature)}`);
-            depositsFound++;
+        if (i > 0 && deposit.slot < lastDeposit.slot && deposit.slot != 0) {
+            console.log(
+                `  ${i - 1}, slot ${lastDeposit.slot}, amount ${formatUnits(
+                    lastDeposit.amount,
+                    9
+                )}, withdrawalCredentials ${toHex(lastDeposit.withdrawalCredentials)}, pubkey ${toHex(
+                    lastDeposit.pubkey
+                )}, signature ${toHex(lastDeposit.signature)}`
+            );
+            console.log(
+                `  ${i}, slot ${deposit.slot}, amount ${formatUnits(deposit.amount, 9)}, withdrawalCredentials ${toHex(
+                    deposit.withdrawalCredentials
+                )}, pubkey ${toHex(deposit.pubkey)}, signature ${toHex(deposit.signature)}`
+            );
+        }
+        lastDeposit = deposit;
+    }
+
+    console.log('Pending deposits with a slot with a zero value');
+    let zeroSlotDeposits = 0;
+    for (let i = 0; i < stateView.pendingDeposits.length; i++) {
+        const deposit = stateView.pendingDeposits.get(i);
+        if (deposit.slot == 0) {
+            zeroSlotDeposits++;
+            console.log(
+                `  ${i} slot ${deposit.slot}, amount ${formatUnits(deposit.amount, 9)}, withdrawalCredentials ${toHex(
+                    deposit.withdrawalCredentials
+                )}, pubkey ${toHex(deposit.pubkey)}, signature ${toHex(deposit.signature)}`
+            );
         }
     }
-    console.log(`${depositsFound} deposits found for validator`);
+    console.log(`${zeroSlotDeposits} of ${stateView.pendingDeposits.length} deposits have a zero slot`);
 
-    console.log(`\nBeaconBlock.state.validators length: ${stateView.validators.length}`);
+    if (stateView.pendingDeposits.length > 0) {
+        console.log(
+            `\nIndex 0 - first deposit in the pending deposits queue of ${stateView.pendingDeposits.length} deposits`
+        );
+        const nextDeposit = stateView.pendingDeposits.get(0);
+        console.log(`  amount ${nextDeposit.amount}`);
+        console.log(`  pubkey ${toHex(nextDeposit.pubkey)}`);
+        console.log(`  slot ${nextDeposit.slot}`);
+        console.log(`  withdrawalCredentials ${toHex(nextDeposit.withdrawalCredentials)}`);
+        // console.log(`signature ${toHex(nextDeposit.signature)}`);
+
+        console.log(
+            `\nindex ${stateView.pendingDeposits.length - 1} - last last deposit in the pending deposits queue of ${
+                stateView.pendingDeposits.length
+            } deposits`
+        );
+        const lastDeposit = stateView.pendingDeposits.get(stateView.pendingDeposits.length - 1);
+        console.log(`  amount ${lastDeposit.amount}`);
+        console.log(`  pubkey ${toHex(lastDeposit.pubkey)}`);
+        console.log(`  slot ${lastDeposit.slot}`);
+        console.log(`  withdrawalCredentials ${toHex(lastDeposit.withdrawalCredentials)}`);
+        // console.log(`signature ${toHex(lastDeposit.signature)}`);
+
+        console.log(`Pending deposit container height: ${nextDeposit.type.depth}`);
+    } else {
+        const emptyDeposit = stateView.pendingDeposits.get(0);
+        console.log(`Root hash of an empty pending deposit: ${toHex(emptyDeposit.hashTreeRoot())}`);
+    }
+
     if (validatorIndex) {
+        const validatorPubKeyBuffer = stateView.validators.get(validatorIndex)?.pubkey;
+        console.log(`\nLooking for deposits to validator with pubkey: ${toHex(validatorPubKeyBuffer)}`);
+        let depositsFound = 0;
+        for (let i = 0; i < stateView.pendingDeposits.length; i++) {
+            const deposit = stateView.pendingDeposits.get(i);
+            if (Buffer.from(deposit.pubkey).equals(validatorPubKeyBuffer)) {
+                console.log(
+                    `  index ${i}, slot ${deposit.slot}, amount ${deposit.amount}, withdrawalCredentials ${toHex(
+                        deposit.withdrawalCredentials
+                    )}, pubkey ${toHex(deposit.pubkey)}, signature ${toHex(deposit.signature)}`
+                );
+                depositsFound++;
+            }
+        }
+        console.log(
+            `${depositsFound} deposits found for validator in ${stateView.pendingDeposits.length} pending deposits`
+        );
+
+        console.log(`\nBeaconBlock.state.validators length: ${stateView.validators.length}`);
+
         const validator = stateView.validators.get(validatorIndex);
         if (!validator.toValue()) {
             console.log(`Validator with index ${validatorIndex} not found`);
@@ -135,7 +185,21 @@ async function main(slot = 'finalized', validatorIndex) {
         console.log(`withdrawal credentials: ${toHex(validator.withdrawalCredentials)}`);
 
         console.log(`Validator balance: ${stateView.balances.get(validatorIndex)}`);
+
+        console.log(`Validator container height: ${validator.type.depth}`);
     }
+
+    console.log(`Beacon block container height: ${blockView.type.depth}`);
+    console.log(`State container height: ${stateView.type.depth}`);
+    console.log(`Pending deposits height: ${stateView.pendingDeposits.type.depth}`);
+    console.log(`Validators height: ${stateView.validators.type.depth}`);
+
+    console.log(
+        `Gen index of the first pending deposit in the state: ${
+            stateView.type.getPathInfo(['pendingDeposits', 0]).gindex
+        }`
+    );
+    console.log(`Gen index of the validators root in the state: ${stateView.type.getPathInfo(['validators']).gindex}`);
 
     /** @type {import('@chainsafe/persistent-merkle-tree').Tree} */
     const beaconBlockTree = blockView.tree.clone();
@@ -144,27 +208,29 @@ async function main(slot = 'finalized', validatorIndex) {
     beaconBlockTree.setNode(stateRootGIndex, stateView.node);
 
     // BeaconBlock.state.PendingDeposits[0].slot
-    console.log(`\nGenerating proof for the slot of the first pending deposit`);
-    const genIndex = concatGindices([
-        blockView.type.getPathInfo(['stateRoot']).gindex,
-        stateView.type.getPathInfo(['pendingDeposits', 0]).gindex,
-        toGindex(3, 4n), // depth 3, index 4 for slot = 11
-    ]);
-    console.log(`gen index for the slot in the first pending deposit in the beacon block: ${genIndex}`);
-    const firstDepositSlotProof = createProof(beaconBlockTree.rootNode, {
-        type: ProofType.single,
-        gindex: genIndex,
-    });
-    console.log(`Slot of the first pending deposit : ${nextDeposit.slot}`);
-    console.log(`Leaf for the slot of the first pending deposit: ${toHex(firstDepositSlotProof.leaf)}`);
-    console.log(
-        `Proof for the slot of the first pending deposit ${
-            firstDepositSlotProof.witnesses.length
-        }: ${firstDepositSlotProof.witnesses.map(toHex)}`
-    );
-    console.log(
-        `Proof in bytes for the slot of the first pending deposit:\n${toHex(concatProof(firstDepositSlotProof))}`
-    );
+    // console.log(`\nGenerating proof for the slot of the first pending deposit`);
+    // const genIndex = concatGindices([
+    //     blockView.type.getPathInfo(['stateRoot']).gindex,
+    //     stateView.type.getPathInfo(['pendingDeposits', 0]).gindex,
+    //     toGindex(3, 4n), // depth 3, index 4 for slot = 11
+    // ]);
+    // console.log(`gen index for the slot in the first pending deposit in the beacon block: ${genIndex}`);
+    // const firstDepositSlotProof = createProof(beaconBlockTree.rootNode, {
+    //     type: ProofType.single,
+    //     gindex: genIndex,
+    // });
+    // console.log(`Leaf for the slot of the first pending deposit: ${toHex(firstDepositSlotProof.leaf)}`);
+    // console.log(
+    //     `Proof for the slot of the first pending deposit ${
+    //         firstDepositSlotProof.witnesses.length
+    //     }: ${firstDepositSlotProof.witnesses.map(toHex)}`
+    // );
+    // console.log(
+    //     `Proof in bytes for the slot of the first pending deposit:\n${toHex(concatProof(firstDepositSlotProof))}`
+    // );
+
+    console.log(`Withdrawal requests ${blockView.body.executionRequests.withdrawals.length}`);
+    // beconBlock.beaconBlockBody.executionRequests.withdrawals[WithdrawalRequest]
 }
 
 // Slot
@@ -211,7 +277,48 @@ async function main(slot = 'finalized', validatorIndex) {
 // Slot before 30 deposits
 // main(11941368);
 
+// Latest mainnet slot
+// main(12301392);
+
+// Latest Hoodi slot
+// main('head');
+
 // Pectra upgrade slot 11649024
 // main(11649024);
 // Next epoch after the Pectra upgrade
-main(11649060);
+// main(11649060);
+
+// Pectra slot with no deposits
+main(1015024, 1204929);
+
+// Pectra validator with a deposit while exiting
+// withdrawal address 0xf7749b41db006860cec0650d18b8013d69c44eeb
+// Slot before the exit request
+// main(956712, 1187281);
+// Exit request was processed in slot 956713
+// main(956713, 1187281);
+// The slot the 32 ETH deposit was requested
+// main(972268, 1187281);
+// The slot after the deposit was requested
+// main(972269, 1187281);
+
+// main(975000, 1187281);
+
+// The slot before the deposit was processed on the beacon chain
+// main(988670, 1187281);
+// The slot the 32 ETH deposit was swept in block 923896
+// main(988671, 1187281);
+// The slot before the exit request was processed on the beacon chain
+// main(990313, 1187281);
+// The slot the exit request was processed on the beacon chain
+// main(990314, 1187281);
+
+// New 1 ETH deposit made on the execution layer
+// main(1062911, 1187281);
+
+// Slot with on-chain exit request in block 989355
+// main(1062956, 1187282);
+// Slot of deposit of 1 ETH in block 989379
+// main(1062981, 1187282);
+// Latest slot with a deposit of 1 ETH to an exiting validator
+// main('head', 1187282);

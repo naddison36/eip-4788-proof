@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@adraffy/ens-normalize@1.10.1":
+  version "1.10.1"
+  resolved "https://registry.yarnpkg.com/@adraffy/ens-normalize/-/ens-normalize-1.10.1.tgz#63430d04bd8c5e74f8d7d049338f1cd9d4f02069"
+  integrity sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==
+
 "@chainsafe/as-sha256@1.2.0", "@chainsafe/as-sha256@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@chainsafe/as-sha256/-/as-sha256-1.2.0.tgz#5764ac9959e147fe0908dd0f66c0cce525a633b3"
@@ -62,7 +67,7 @@
     eventsource "^2.0.2"
     qs "^6.11.1"
 
-"@lodestar/config@^1.31.0", "@lodestar/config@^1.31.1":
+"@lodestar/config@^1.31.0":
   version "1.31.0"
   resolved "https://registry.yarnpkg.com/@lodestar/config/-/config-1.31.0.tgz#f5e415d642f887e45117be641bcdffdeb801e1c6"
   integrity sha512-DaFKeqYBu8yLW8IRUkxHalJHWLLJqswxttRhALnEUmEgLDiU1erVxwhjIe2UzTWHVqB8KdKTZHTVWP0A+QJq+Q==
@@ -72,18 +77,42 @@
     "@lodestar/types" "^1.31.0"
     "@lodestar/utils" "^1.31.0"
 
-"@lodestar/params@^1.31.0", "@lodestar/params@^1.31.1":
+"@lodestar/config@^1.31.1":
+  version "1.32.0"
+  resolved "https://registry.yarnpkg.com/@lodestar/config/-/config-1.32.0.tgz#1f23ca72f1be2d812db87437330ef7dc1a858db6"
+  integrity sha512-Io1AJEdlhN2khxl+6zNm2C1WB5OTgovvSJFxDxNI5H7kMREDDCQ07sXr4ydMAzmFdrlxEGw6YyKlmh+Hf9Iivw==
+  dependencies:
+    "@chainsafe/ssz" "^1.2.1"
+    "@lodestar/params" "^1.32.0"
+    "@lodestar/types" "^1.32.0"
+    "@lodestar/utils" "^1.32.0"
+
+"@lodestar/params@^1.31.0":
   version "1.31.0"
   resolved "https://registry.yarnpkg.com/@lodestar/params/-/params-1.31.0.tgz#526cb62ce23680387344b6f4e208d68c5c019251"
   integrity sha512-9ZsAQSbHSqu0je5IKhumCi0LI0YOO7ekjuMuZFov2QgySb/ofDvnuqjD4UO6/8u1yN6TS87r6h3F9IBzbT316g==
 
-"@lodestar/types@^1.31.0", "@lodestar/types@^1.31.1":
+"@lodestar/params@^1.31.1", "@lodestar/params@^1.32.0":
+  version "1.32.0"
+  resolved "https://registry.yarnpkg.com/@lodestar/params/-/params-1.32.0.tgz#eb0ba0c66bb24abda0b12abf7969d185877bf1f7"
+  integrity sha512-VKRDrjO8PGsWsCKYL85Hqz/+xre8bdqavJgEXK7uya6EcE46xFFWiH/Jrn8a0A83YxgDlGSk8WR0szEg+dtSSQ==
+
+"@lodestar/types@^1.31.0":
   version "1.31.0"
   resolved "https://registry.yarnpkg.com/@lodestar/types/-/types-1.31.0.tgz#481b5661420aba9d3c357be1a9ed89e937189d08"
   integrity sha512-rpsSRfiEXqRO6IjbnZqkYa0guBK7s/BkqJT3ClBWmcUg/VSGYCjT2I2dNhfGxPmddovP7xonYXpXK/x8xZGh1g==
   dependencies:
     "@chainsafe/ssz" "^1.2.1"
     "@lodestar/params" "^1.31.0"
+    ethereum-cryptography "^2.0.0"
+
+"@lodestar/types@^1.31.1", "@lodestar/types@^1.32.0":
+  version "1.32.0"
+  resolved "https://registry.yarnpkg.com/@lodestar/types/-/types-1.32.0.tgz#968c833240adac0fe07d254966cda4c2087d451e"
+  integrity sha512-w8eR/q5cgRrWxJAiSfbrnAfaavTDW+w49wF5gPZ8JDHW0RkfZZx3taYB5elNolPsOZNQJm0wxhK9iVIq2YeNyg==
+  dependencies:
+    "@chainsafe/ssz" "^1.2.1"
+    "@lodestar/params" "^1.32.0"
     ethereum-cryptography "^2.0.0"
 
 "@lodestar/utils@^1.31.0":
@@ -97,6 +126,24 @@
     case "^1.6.3"
     js-yaml "^4.1.0"
 
+"@lodestar/utils@^1.32.0":
+  version "1.32.0"
+  resolved "https://registry.yarnpkg.com/@lodestar/utils/-/utils-1.32.0.tgz#4de4af4e3781047fb6b41a6104d2cb1b2d471183"
+  integrity sha512-O3dAGqh54P1/9o+P/WHN1XDkY1S4fWYWPwYPUreBGepSnk8ImgDj3wcpiIxA4n/aD4llUJZxpC7TPTbTntVRwQ==
+  dependencies:
+    "@chainsafe/as-sha256" "^1.2.0"
+    any-signal "^4.1.1"
+    bigint-buffer "^1.1.5"
+    case "^1.6.3"
+    js-yaml "^4.1.0"
+
+"@noble/curves@1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@noble/curves/-/curves-1.2.0.tgz#92d7e12e4e49b23105a2555c6984d41733d65c35"
+  integrity sha512-oYclrNgRaM9SsBUBVbb8M6DTV7ZHRTKugureoYEncY5c65HOmRzvSiTE3y5CYaPYJA/GVkrhXEoF0M3Ya9PMnw==
+  dependencies:
+    "@noble/hashes" "1.3.2"
+
 "@noble/curves@1.4.2", "@noble/curves@~1.4.0":
   version "1.4.2"
   resolved "https://registry.yarnpkg.com/@noble/curves/-/curves-1.4.2.tgz#40309198c76ed71bc6dbf7ba24e81ceb4d0d1fe9"
@@ -104,15 +151,15 @@
   dependencies:
     "@noble/hashes" "1.4.0"
 
+"@noble/hashes@1.3.2", "@noble/hashes@^1.3.0":
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.3.2.tgz#6f26dbc8fbc7205873ce3cee2f690eba0d421b39"
+  integrity sha512-MVC8EAQp7MvEcm30KWENFjgR+Mkmf+D189XJTkFIlwohU5hcBbn1ZkKq7KVTi2Hme3PMGF390DaL52beVrIihQ==
+
 "@noble/hashes@1.4.0", "@noble/hashes@~1.4.0":
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.4.0.tgz#45814aa329f30e4fe0ba49426f49dfccdd066426"
   integrity sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==
-
-"@noble/hashes@^1.3.0":
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.3.2.tgz#6f26dbc8fbc7205873ce3cee2f690eba0d421b39"
-  integrity sha512-MVC8EAQp7MvEcm30KWENFjgR+Mkmf+D189XJTkFIlwohU5hcBbn1ZkKq7KVTi2Hme3PMGF390DaL52beVrIihQ==
 
 "@scure/base@~1.1.6":
   version "1.1.9"
@@ -135,6 +182,18 @@
   dependencies:
     "@noble/hashes" "~1.4.0"
     "@scure/base" "~1.1.6"
+
+"@types/node@22.7.5":
+  version "22.7.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.7.5.tgz#cfde981727a7ab3611a481510b473ae54442b92b"
+  integrity sha512-jML7s2NAzMWc//QSJ1a3prpk78cOPchGvXJsC3C6R6PSMoooztvRVQEz89gmBTBY1SPMaqo5teB4uNHPdetShQ==
+  dependencies:
+    undici-types "~6.19.2"
+
+aes-js@4.0.0-beta.5:
+  version "4.0.0-beta.5"
+  resolved "https://registry.yarnpkg.com/aes-js/-/aes-js-4.0.0-beta.5.tgz#8d2452c52adedebc3a3e28465d858c11ca315873"
+  integrity sha512-G965FqalsNyrPqgEGON7nIx1e/OVENSgiEIzyC63haUMuvNnwIgIjMs52hlTCKhkBny7A2ORNlfY9Zu+jmGk1Q==
 
 any-signal@^4.1.1:
   version "4.1.1"
@@ -182,6 +241,19 @@ ethereum-cryptography@^2.0.0:
     "@noble/hashes" "1.4.0"
     "@scure/bip32" "1.4.0"
     "@scure/bip39" "1.3.0"
+
+ethers@^6.15.0:
+  version "6.15.0"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-6.15.0.tgz#2980f2a3baf0509749b7e21f8692fa8a8349c0e3"
+  integrity sha512-Kf/3ZW54L4UT0pZtsY/rf+EkBU7Qi5nnhonjUb8yTXcxH3cdcWrV2cRyk0Xk/4jK6OoHhxxZHriyhje20If2hQ==
+  dependencies:
+    "@adraffy/ens-normalize" "1.10.1"
+    "@noble/curves" "1.2.0"
+    "@noble/hashes" "1.3.2"
+    "@types/node" "22.7.5"
+    aes-js "4.0.0-beta.5"
+    tslib "2.7.0"
+    ws "8.17.1"
 
 eventsource@^2.0.2:
   version "2.0.2"
@@ -252,3 +324,18 @@ side-channel@^1.0.4:
     call-bind "^1.0.0"
     get-intrinsic "^1.0.2"
     object-inspect "^1.9.0"
+
+tslib@2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.7.0.tgz#d9b40c5c40ab59e8738f297df3087bf1a2690c01"
+  integrity sha512-gLXCKdN1/j47AiHiOkJN69hJmcbGTHI0ImLmbYLHykhgeN0jVGola9yVjFgzCUklsZQMW55o+dW7IXv3RCXDzA==
+
+undici-types@~6.19.2:
+  version "6.19.8"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-6.19.8.tgz#35111c9d1437ab83a7cdc0abae2f26d88eda0a02"
+  integrity sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==
+
+ws@8.17.1:
+  version "8.17.1"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.17.1.tgz#9293da530bb548febc95371d90f9c878727d919b"
+  integrity sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==
